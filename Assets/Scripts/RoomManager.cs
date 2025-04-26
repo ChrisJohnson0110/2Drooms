@@ -19,21 +19,23 @@ public class RoomManager : MonoBehaviour
     private void Start()
     {
         CreateNewRoom(startingRoom);
-        //CheckRoomForGeneration(spawnedRooms[0]);
-        //CheckRoomForGeneration(spawnedRooms[2]);
 
         roomsToExpand.Enqueue(spawnedRooms[0]);
-        GenerateRooms();
-        PlacePlugs();
+
+        StartCoroutine(GenerateRooms());
     }
 
-    void GenerateRooms()
+    
+    IEnumerator GenerateRooms()
     {
         while (roomsToExpand.Count > 0 && spawnedRooms.Count < maxRooms)
         {
             Room current = roomsToExpand.Dequeue();
             CheckRoomForGeneration(current);
+            yield return new WaitForSeconds(0.03f); 
         }
+
+        PlacePlugs();
     }
 
     //if any doorways within this room havent been generated
@@ -216,8 +218,5 @@ public class RoomManager : MonoBehaviour
         }
     }
 
-    IEnumerable wait()
-    {
-        yield return new WaitForSeconds(0.5f);
-    }
+
 }
