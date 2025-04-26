@@ -12,6 +12,7 @@ public class RoomManager : MonoBehaviour
     //public HashSet<Vector3> occupiedPositions = new HashSet<Vector3>();
     Queue<Room> roomsToExpand = new Queue<Room>();
     public int maxRooms = 50;
+    public float maxDistanceFromStart = 50f;
 
     public Dictionary<Vector3, Room> occupiedRooms = new Dictionary<Vector3, Room>();
     public RoomData endCapRoom;
@@ -103,7 +104,9 @@ public class RoomManager : MonoBehaviour
 
         Vector3 spawnPosition = parentRoom.room.transform.position + GetPosition(a_doorway);
 
-        if (IsValidRoomPlacement(a_roomData, spawnPosition) && FindRoomAtPosition(spawnPosition) == null) 
+        float distance = Vector3.Distance(new Vector3(0,0,0), spawnPosition);
+
+        if (IsValidRoomPlacement(a_roomData, spawnPosition) && FindRoomAtPosition(spawnPosition) == null && distance <= maxDistanceFromStart) 
         {
             newRoomInstance.room = Instantiate(newRoomInstance.RoomData.prefab, spawnPosition, transform.rotation);
 
