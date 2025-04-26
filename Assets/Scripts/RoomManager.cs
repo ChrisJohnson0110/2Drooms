@@ -9,9 +9,12 @@ public class RoomManager : MonoBehaviour
     public List<RoomData> availableRooms; // room prefabs
     public List<Room> spawnedRooms = new List<Room>(); // rooms
     public List<Doorway> openDoorways = new List<Doorway>(); // doors opened
-    public HashSet<Vector3> occupiedPositions = new HashSet<Vector3>();
+    //public HashSet<Vector3> occupiedPositions = new HashSet<Vector3>();
     Queue<Room> roomsToExpand = new Queue<Room>();
     public int maxRooms = 50;
+
+    public Dictionary<Vector3, Room> occupiedRooms = new Dictionary<Vector3, Room>();
+    public RoomData endCapRoom;
 
     private void Start()
     {
@@ -21,6 +24,7 @@ public class RoomManager : MonoBehaviour
 
         roomsToExpand.Enqueue(spawnedRooms[0]);
         GenerateRooms();
+        PlacePlugs();
     }
 
     void GenerateRooms()
@@ -39,15 +43,32 @@ public class RoomManager : MonoBehaviour
         {
             return;
         }
+
         foreach (Direction door in a_room.doorways)
         {
-            CreateNewRoom(a_room, GetRoomToGenerate(door), door);
+            Vector3 spawnPosition = a_room.room.transform.position + GetPosition(door);
+            RoomData roomToGenerate = GetRoomToGenerate(door, spawnPosition);
+            if (roomToGenerate != null)
+            {
+                CreateNewRoom(a_room, roomToGenerate, door);
+            }
+            else
+            {
+                Debug.LogWarning("Couldn't find valid room for spawn position " + spawnPosition);
+
+                // Spawn end cap room
+                if (!occupiedRooms.ContainsKey(spawnPosition)) // extra safety
+                {
+                    CreateNewRoom(a_room, endCapRoom, door);
+                }
+            }
         }
+
         a_room.doorways.Clear();
     }
 
     //get a random tile that can be connected to the given doorway
-    private RoomData GetRoomToGenerate(Direction a_doorway)
+    private RoomData GetRoomToGenerate(Direction a_doorway, Vector3 spawnPosition)
     {
         List<RoomData> PossibleRooms = new List<RoomData>();
 
@@ -57,9 +78,17 @@ public class RoomManager : MonoBehaviour
             {
                 if (door == GetOppositeDirection(a_doorway))
                 {
-                    PossibleRooms.Add(roomdata);
+                    if (IsValidRoomPlacement(roomdata, spawnPosition))
+                    {
+                        PossibleRooms.Add(roomdata);
+                    }
                 }
             }
+        }
+
+        if (PossibleRooms.Count == 0)
+        {
+            return null; // couldn't find valid room
         }
 
         return PossibleRooms[Random.Range(0, PossibleRooms.Count)];
@@ -72,12 +101,12 @@ public class RoomManager : MonoBehaviour
 
         Vector3 spawnPosition = parentRoom.room.transform.position + GetPosition(a_doorway);
 
-        if (IsValidRoomPlacement(a_roomData, spawnPosition) && !occupiedPositions.Contains(spawnPosition))
+        if (IsValidRoomPlacement(a_roomData, spawnPosition) && FindRoomAtPosition(spawnPosition) == null) 
         {
             newRoomInstance.room = Instantiate(newRoomInstance.RoomData.prefab, spawnPosition, transform.rotation);
 
             spawnedRooms.Add(newRoomInstance);
-            occupiedPositions.Add(spawnPosition);
+            occupiedRooms[spawnPosition] = newRoomInstance;
 
             roomsToExpand.Enqueue(newRoomInstance);
         }
@@ -94,8 +123,9 @@ public class RoomManager : MonoBehaviour
     private void CreateNewRoom(RoomData a_roomData)
     {
         Room newRoomInstance = new Room(a_roomData);
-        newRoomInstance.room = Instantiate(newRoomInstance.RoomData.prefab, new Vector3(0,0,0), transform.rotation);
+        newRoomInstance.room = Instantiate(newRoomInstance.RoomData.prefab, Vector3.zero, transform.rotation);
         spawnedRooms.Add(newRoomInstance);
+        occupiedRooms[Vector3.zero] = newRoomInstance;
     }
 
     //get the opposite direction to the given direction
@@ -124,15 +154,12 @@ public class RoomManager : MonoBehaviour
         }
     }
 
-    //is there a room at the given position // TODO swap to dictionary
+    //is there a room at the given position 
     Room FindRoomAtPosition(Vector3 position)
     {
-        foreach (Room room in spawnedRooms)
+        if (occupiedRooms.TryGetValue(position, out Room room))
         {
-            if (room.room.transform.position == position)
-            {
-                return room;
-            }
+            return room;
         }
         return null;
     }
@@ -142,26 +169,55 @@ public class RoomManager : MonoBehaviour
         foreach (Direction dir in System.Enum.GetValues(typeof(Direction)))
         {
             Vector3 neighborPos = spawnPosition + GetPosition(dir);
-            Room neighborRoom = FindRoomAtPosition(neighborPos); //error line
-            if (neighborRoom != null)
+            if (occupiedRooms.TryGetValue(neighborPos, out Room neighborRoom))
             {
-                // Neighbor exists, check doorways
-                bool neighborHasDoorFacingUs = neighborRoom.doorways.Contains(GetOppositeDirection(dir));
+                bool neighborHasDoorFacingUs = neighborRoom.RoomData.doors.Contains(GetOppositeDirection(dir));
                 bool ourRoomHasDoorFacingNeighbor = roomData.doors.Contains(dir);
 
                 if (neighborHasDoorFacingUs && !ourRoomHasDoorFacingNeighbor)
                 {
-                    // Neighbor expects a door but this room has none = bad
+                    // Neighbor expects a door, but we don't have one — BAD
                     return false;
                 }
-                else if (!neighborHasDoorFacingUs && ourRoomHasDoorFacingNeighbor)
+                if (!neighborHasDoorFacingUs && ourRoomHasDoorFacingNeighbor)
                 {
-                    // Our room expects a door but neighbor has none = bad
+                    // We have a door, but neighbor doesn't expect one — BAD
                     return false;
                 }
             }
         }
 
         return true;
+    }
+
+    //check all tiles for gaps and place plugs
+    void PlacePlugs()
+    {
+        List<Vector3> checkedPositions = new List<Vector3>();
+
+        foreach (var kvp in occupiedRooms)
+        {
+            Vector3 roomPos = kvp.Key;
+
+            foreach (Direction dir in System.Enum.GetValues(typeof(Direction)))
+            {
+                Vector3 neighborPos = roomPos + GetPosition(dir);
+
+                if (occupiedRooms.ContainsKey(neighborPos) || checkedPositions.Contains(neighborPos))
+                {
+                    // Already has room there or already checked
+                    continue;
+                }
+
+                // Spawn plug
+                GameObject plug = Instantiate(endCapRoom.prefab, neighborPos, Quaternion.identity, transform);
+                checkedPositions.Add(neighborPos);
+            }
+        }
+    }
+
+    IEnumerable wait()
+    {
+        yield return new WaitForSeconds(0.5f);
     }
 }

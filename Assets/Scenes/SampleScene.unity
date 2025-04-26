@@ -350,5 +350,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 291c404c846a7524f9e67e0c0f507f57, type: 2}
   - {fileID: 11400000, guid: 836b571d1742c10459955b854c576226, type: 2}
   - {fileID: 11400000, guid: 284c0733385edf84f858d54e88afd222, type: 2}
+  - {fileID: 11400000, guid: 74c5ef1bed80a554280081ac1ddb26ee, type: 2}
+  - {fileID: 11400000, guid: f111ede253dacb248bff689786edb5bc, type: 2}
   openDoorways: []
-  maxRooms: 200
+  maxRooms: 20
+  endCapRoom: {fileID: 11400000, guid: 38b019752a782ef44a455d05de2a7b47, type: 2}
