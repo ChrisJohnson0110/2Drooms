@@ -8,5 +8,5 @@ public enum Direction { North, East, South, West }
 public class RoomData : ScriptableObject
 {
     public GameObject prefab;
-    public List<Doorway> doors;
+    public List<Direction> doors;
 }

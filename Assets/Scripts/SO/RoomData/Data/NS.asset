@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: NS
   m_EditorClassIdentifier: 
   prefab: {fileID: 5612726807592789083, guid: 758014c13ad9c6249b04546c729177a4, type: 3}
-  openings: 0000000002000000
+  doors: 0000000002000000
