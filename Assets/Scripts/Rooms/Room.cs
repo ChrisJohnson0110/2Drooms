@@ -5,7 +5,9 @@ using UnityEngine;
 public class Room
 {
     public RoomData RoomData;
-    public GameObject room;
+    public GameObject RoomModel;
+
+
     public List<Room> neighbours =  new List<Room>(); 
     public List<Direction> doorways = new List<Direction>();
 

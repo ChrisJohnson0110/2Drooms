@@ -13,13 +13,15 @@ public class RoomManager : MonoBehaviour
     [SerializeField] private RoomData _endCapRoom;
 
     //room data
-    [HideInInspector] public Dictionary<Vector3, Room> occupiedRooms = new Dictionary<Vector3, Room>();
+    [HideInInspector] public Dictionary<Vector3, Room> occupiedRooms { get; private set; } = new Dictionary<Vector3, Room>();
     private Queue<Room> _roomsToExpand = new Queue<Room>();
     private List<GameObject> _plugs = new List<GameObject>();
 
     //room settings
-    [SerializeField] private int _maxRooms = 50;
-    [SerializeField] private float _maxDistanceFromStart = 50f;
+    public int _maxRooms { get; private set; } = 50;
+    public int _maxDistanceFromStart { get; private set; } = 100;
+
+    public bool isGenerating = false;
 
     private void Awake()
     {
@@ -34,8 +36,15 @@ public class RoomManager : MonoBehaviour
         }
     }
 
-    public void StartMapGeneration()
+    public void StartMapGeneration(int a_numberOfRooms, int a_distanceFromStart)
     {
+        if (a_numberOfRooms != -1 && a_distanceFromStart != -1)
+        {
+            _maxRooms = a_numberOfRooms;
+            _maxDistanceFromStart = a_distanceFromStart;
+        }
+
+        isGenerating = true;
         CreateNewRoom(_startingRoom);
         _roomsToExpand.Enqueue(occupiedRooms[Vector3.zero]);
         StartCoroutine(GenerateRooms());
@@ -52,6 +61,8 @@ public class RoomManager : MonoBehaviour
         }
 
         PlacePlugs();
+        CenterCamera.instance.AllignCameraCenter();
+        isGenerating = false;
     }
 
     //if any doorways within this room havent been generated
@@ -64,7 +75,7 @@ public class RoomManager : MonoBehaviour
 
         foreach (Direction door in a_room.doorways)
         {
-            Vector3 spawnPosition = a_room.room.transform.position + GetPosition(door);
+            Vector3 spawnPosition = a_room.RoomModel.transform.position + GetPosition(door);
             RoomData roomToGenerate = GetRoomToGenerate(door, spawnPosition);
             if (roomToGenerate != null)
             {
@@ -117,13 +128,13 @@ public class RoomManager : MonoBehaviour
     {
         Room newRoomInstance = new Room(a_roomData);
 
-        Vector3 spawnPosition = parentRoom.room.transform.position + GetPosition(a_doorway);
+        Vector3 spawnPosition = parentRoom.RoomModel.transform.position + GetPosition(a_doorway);
 
         float distance = Vector3.Distance(new Vector3(0,0,0), spawnPosition);
 
         if (IsValidRoomPlacement(a_roomData, spawnPosition) && FindRoomAtPosition(spawnPosition) == null && distance <= _maxDistanceFromStart) 
         {
-            newRoomInstance.room = Instantiate(newRoomInstance.RoomData.prefab, spawnPosition, transform.rotation);
+            newRoomInstance.RoomModel = Instantiate(newRoomInstance.RoomData.prefab, spawnPosition, transform.rotation);
             occupiedRooms[spawnPosition] = newRoomInstance;
 
             _roomsToExpand.Enqueue(newRoomInstance);
@@ -134,7 +145,7 @@ public class RoomManager : MonoBehaviour
     private void CreateNewRoom(RoomData a_roomData)
     {
         Room newRoomInstance = new Room(a_roomData);
-        newRoomInstance.room = Instantiate(newRoomInstance.RoomData.prefab, Vector3.zero, transform.rotation);
+        newRoomInstance.RoomModel = Instantiate(newRoomInstance.RoomData.prefab, Vector3.zero, transform.rotation);
         occupiedRooms[Vector3.zero] = newRoomInstance;
     }
 
@@ -204,9 +215,15 @@ public class RoomManager : MonoBehaviour
     //clear the current rooms
     public void ClearGeneration()
     {
+        if (isGenerating == true)
+        {
+            Debug.LogError("Clear attempted while still generating");
+            return;
+        }
+
         foreach (Room room in occupiedRooms.Values)
         {
-            Destroy(room.room);
+            Destroy(room.RoomModel);
         }
         occupiedRooms.Clear();
 

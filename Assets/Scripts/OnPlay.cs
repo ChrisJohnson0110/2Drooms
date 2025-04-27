@@ -6,12 +6,6 @@ public class OnPlay : MonoBehaviour
 {
     void Start()
     {
-        RoomManager.instance.StartMapGeneration();
-    }
-
-    public void newGeneration()
-    {
-        RoomManager.instance.ClearGeneration();
-        RoomManager.instance.StartMapGeneration();
+        RoomManager.instance.StartMapGeneration(-1,-1);
     }
 }
