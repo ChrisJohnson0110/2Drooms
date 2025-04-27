@@ -11,7 +11,7 @@ public class OnPlay : MonoBehaviour
 
     public void newGeneration()
     {
-        RoomManager.instance.occupiedRooms.Clear();
+        RoomManager.instance.ClearGeneration();
         RoomManager.instance.StartMapGeneration();
     }
 }

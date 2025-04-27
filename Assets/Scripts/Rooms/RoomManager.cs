@@ -15,6 +15,7 @@ public class RoomManager : MonoBehaviour
     //room data
     [HideInInspector] public Dictionary<Vector3, Room> occupiedRooms = new Dictionary<Vector3, Room>();
     private Queue<Room> _roomsToExpand = new Queue<Room>();
+    private List<GameObject> _plugs = new List<GameObject>();
 
     //room settings
     [SerializeField] private int _maxRooms = 50;
@@ -194,8 +195,24 @@ public class RoomManager : MonoBehaviour
 
                 // Spawn plug
                 GameObject plug = Instantiate(_endCapRoom.prefab, neighborPos, Quaternion.identity, transform);
+                _plugs.Add(plug);
                 checkedPositions.Add(neighborPos);
             }
+        }
+    }
+
+    //clear the current rooms
+    public void ClearGeneration()
+    {
+        foreach (Room room in occupiedRooms.Values)
+        {
+            Destroy(room.room);
+        }
+        occupiedRooms.Clear();
+
+        foreach (GameObject plug in _plugs)
+        {
+            Destroy(plug);
         }
     }
 

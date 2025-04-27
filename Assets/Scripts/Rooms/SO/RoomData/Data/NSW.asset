@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23bde58a2d250eb45860911dd25e6ae0, type: 3}
   m_Name: NSW
   m_EditorClassIdentifier: 
-  prefab: {fileID: 1868672482796520987, guid: 160c8d88a573f2c4a8ac4003803ecc30, type: 3}
-  doors: 000000000300000002000000
+  <prefab>k__BackingField: {fileID: 1868672482796520987, guid: 160c8d88a573f2c4a8ac4003803ecc30, type: 3}
+  <doors>k__BackingField: 000000000200000003000000

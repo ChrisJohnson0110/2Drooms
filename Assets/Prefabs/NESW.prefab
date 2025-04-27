@@ -170,7 +170,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8105903456438444456}
   m_Layer: 0
-  m_Name: DoorNorthSouthEastWest
+  m_Name: NESW
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23bde58a2d250eb45860911dd25e6ae0, type: 3}
   m_Name: W
   m_EditorClassIdentifier: 
-  prefab: {fileID: 4297972239374213481, guid: ffcf8e80d3215fb499386aa1c4f4c39d, type: 3}
-  doors: 03000000
+  <prefab>k__BackingField: {fileID: 4297972239374213481, guid: ffcf8e80d3215fb499386aa1c4f4c39d, type: 3}
+  <doors>k__BackingField: 03000000
