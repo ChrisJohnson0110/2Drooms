@@ -214,6 +214,8 @@ public class RoomManager : MonoBehaviour
         {
             Destroy(plug);
         }
+
+        _roomsToExpand.Clear();
     }
 
     //get the opposite direction to the given direction
