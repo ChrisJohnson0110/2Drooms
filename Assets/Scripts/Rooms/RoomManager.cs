@@ -4,34 +4,49 @@ using UnityEngine;
 
 public class RoomManager : MonoBehaviour
 {
-    public RoomData startingRoom;
+    public static RoomManager instance;
 
-    public List<RoomData> availableRooms; // room prefabs
-    public List<Room> spawnedRooms = new List<Room>(); // rooms
-    public List<Doorway> openDoorways = new List<Doorway>(); // doors opened
-    //public HashSet<Vector3> occupiedPositions = new HashSet<Vector3>();
-    Queue<Room> roomsToExpand = new Queue<Room>();
-    public int maxRooms = 50;
-    public float maxDistanceFromStart = 50f;
+    //room prefabs
+    [Header("Room prefabs")]
+    [SerializeField] private RoomData _startingRoom;
+    [SerializeField] private List<RoomData> _availableRooms; // room prefabs
+    [SerializeField] private RoomData _endCapRoom;
 
-    public Dictionary<Vector3, Room> occupiedRooms = new Dictionary<Vector3, Room>();
-    public RoomData endCapRoom;
+    //room data
+    [HideInInspector] public Dictionary<Vector3, Room> occupiedRooms = new Dictionary<Vector3, Room>();
+    private Queue<Room> _roomsToExpand = new Queue<Room>();
 
-    private void Start()
+    //room settings
+    [SerializeField] private int _maxRooms = 50;
+    [SerializeField] private float _maxDistanceFromStart = 50f;
+
+    private void Awake()
     {
-        CreateNewRoom(startingRoom);
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
 
-        roomsToExpand.Enqueue(spawnedRooms[0]);
 
+    public void StartMapGeneration()
+    {
+        CreateNewRoom(_startingRoom);
+        _roomsToExpand.Enqueue(occupiedRooms[Vector3.zero]);
         StartCoroutine(GenerateRooms());
     }
 
-    
-    IEnumerator GenerateRooms()
+    //generate rooms with a slight delay inbetween
+    private IEnumerator GenerateRooms()
     {
-        while (roomsToExpand.Count > 0 && spawnedRooms.Count < maxRooms)
+        while (_roomsToExpand.Count > 0 && occupiedRooms.Count < _maxRooms)
         {
-            Room current = roomsToExpand.Dequeue();
+            Room current = _roomsToExpand.Dequeue();
             CheckRoomForGeneration(current);
             yield return new WaitForSeconds(0.03f); 
         }
@@ -62,7 +77,7 @@ public class RoomManager : MonoBehaviour
                 // Spawn end cap room
                 if (!occupiedRooms.ContainsKey(spawnPosition)) // extra safety
                 {
-                    CreateNewRoom(a_room, endCapRoom, door);
+                    CreateNewRoom(a_room, _endCapRoom, door);
                 }
             }
         }
@@ -75,7 +90,7 @@ public class RoomManager : MonoBehaviour
     {
         List<RoomData> PossibleRooms = new List<RoomData>();
 
-        foreach (RoomData roomdata in availableRooms)
+        foreach (RoomData roomdata in _availableRooms)
         {
             foreach (Direction door in roomdata.doors)
             {
@@ -106,22 +121,13 @@ public class RoomManager : MonoBehaviour
 
         float distance = Vector3.Distance(new Vector3(0,0,0), spawnPosition);
 
-        if (IsValidRoomPlacement(a_roomData, spawnPosition) && FindRoomAtPosition(spawnPosition) == null && distance <= maxDistanceFromStart) 
+        if (IsValidRoomPlacement(a_roomData, spawnPosition) && FindRoomAtPosition(spawnPosition) == null && distance <= _maxDistanceFromStart) 
         {
             newRoomInstance.room = Instantiate(newRoomInstance.RoomData.prefab, spawnPosition, transform.rotation);
-
-            spawnedRooms.Add(newRoomInstance);
             occupiedRooms[spawnPosition] = newRoomInstance;
 
-            roomsToExpand.Enqueue(newRoomInstance);
+            _roomsToExpand.Enqueue(newRoomInstance);
         }
-        else
-        {
-            Debug.Log("overlap");
-            return;
-        }
-
-        spawnedRooms.Add(newRoomInstance);
     }
 
     //starting room
@@ -129,34 +135,7 @@ public class RoomManager : MonoBehaviour
     {
         Room newRoomInstance = new Room(a_roomData);
         newRoomInstance.room = Instantiate(newRoomInstance.RoomData.prefab, Vector3.zero, transform.rotation);
-        spawnedRooms.Add(newRoomInstance);
         occupiedRooms[Vector3.zero] = newRoomInstance;
-    }
-
-    //get the opposite direction to the given direction
-    private Direction GetOppositeDirection(Direction dir)
-    {
-        switch (dir)
-        {
-            case Direction.North: return Direction.South;
-            case Direction.South: return Direction.North;
-            case Direction.East: return Direction.West;
-            case Direction.West: return Direction.East;
-            default: return dir;
-        }
-    }
-    
-    //get the position of the next room
-    private Vector3 GetPosition(Direction dir)
-    {
-        switch (dir)
-        {
-            case Direction.North: return new Vector3(0, 0, 10);
-            case Direction.South: return new Vector3(0, 0, -10);
-            case Direction.East: return new Vector3(10, 0, 0);
-            case Direction.West: return new Vector3(-10, 0, 0);
-            default: return new Vector3(0,0,0);
-        }
     }
 
     //is there a room at the given position 
@@ -215,11 +194,36 @@ public class RoomManager : MonoBehaviour
                 }
 
                 // Spawn plug
-                GameObject plug = Instantiate(endCapRoom.prefab, neighborPos, Quaternion.identity, transform);
+                GameObject plug = Instantiate(_endCapRoom.prefab, neighborPos, Quaternion.identity, transform);
                 checkedPositions.Add(neighborPos);
             }
         }
     }
 
+    //get the opposite direction to the given direction
+    private Direction GetOppositeDirection(Direction dir)
+    {
+        switch (dir)
+        {
+            case Direction.North: return Direction.South;
+            case Direction.South: return Direction.North;
+            case Direction.East: return Direction.West;
+            case Direction.West: return Direction.East;
+            default: return dir;
+        }
+    }
+
+    //get the position of the next room
+    private Vector3 GetPosition(Direction dir)
+    {
+        switch (dir)
+        {
+            case Direction.North: return new Vector3(0, 0, 10);
+            case Direction.South: return new Vector3(0, 0, -10);
+            case Direction.East: return new Vector3(10, 0, 0);
+            case Direction.West: return new Vector3(-10, 0, 0);
+            default: return new Vector3(0, 0, 0);
+        }
+    }
 
 }
