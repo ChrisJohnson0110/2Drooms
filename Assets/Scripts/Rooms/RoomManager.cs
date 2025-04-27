@@ -33,7 +33,6 @@ public class RoomManager : MonoBehaviour
         }
     }
 
-
     public void StartMapGeneration()
     {
         CreateNewRoom(_startingRoom);

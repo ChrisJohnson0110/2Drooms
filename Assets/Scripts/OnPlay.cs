@@ -8,4 +8,10 @@ public class OnPlay : MonoBehaviour
     {
         RoomManager.instance.StartMapGeneration();
     }
+
+    public void newGeneration()
+    {
+        RoomManager.instance.occupiedRooms.Clear();
+        RoomManager.instance.StartMapGeneration();
+    }
 }
